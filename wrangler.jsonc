@@ -9,7 +9,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "relaypad",
-	"main": ".open-next/worker.js",
+	"main": "worker.ts",
 	"compatibility_date": "2026-06-17",
 	"compatibility_flags": [
 		"nodejs_compat",
@@ -32,6 +32,22 @@
 			"service": "relaypad"
 		}
 	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "3fa075165f3a45b29d5b3a2885119475",
+			"preview_id": "8216763e3e3f4407a39b284160f1e6fb"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "R2",
+			"bucket_name": "relaypad-payloads"
+		}
+	],
+	"triggers": {
+		"crons": ["0 4 * * *"]
+	},
 	"observability": {
 		"enabled": true
 	},

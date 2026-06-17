@@ -30,3 +30,34 @@ ChunkLoadError: Failed to load chunk server/chunks/ssr/[root-of-the-server]__*.j
 **notes**
 - opennext warns that windows builds can be flaky; wsl is recommended if preview/deploy misbehaves again
 - wrangler config is `wrangler.jsonc` (not `.toml`); `nodejs_compat` is set there
+
+## 2026-06-17 — opennext build EPERM on `.open-next`
+
+**symptom**
+- `npm run deploy` fails with `EPERM, Permission denied` when deleting `.open-next`
+
+**cause**
+- stale `next dev`, `npm run preview`, or `wrangler dev` processes hold a lock on `.open-next/assets`
+
+**fix**
+- kill stale project processes, delete `.open-next`, redeploy
+- only run one of dev/preview/deploy at a time on windows
+
+**powershell (windows)**
+```powershell
+Get-CimInstance Win32_Process -Filter "name='node.exe' OR name='workerd.exe'" |
+  Where-Object { $_.CommandLine -match 'programs\\peer' } |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+Start-Sleep -Seconds 2
+Remove-Item -Recurse -Force .open-next -ErrorAction SilentlyContinue
+npm run deploy
+```
+
+**wsl ubuntu (preferred for opennext)**
+```bash
+cd /mnt/c/Users/skinn/OneDrive/Documents/programs/peer
+pkill -f "programs/peer.*(next|wrangler|opennext|workerd)" 2>/dev/null || true
+sleep 2
+rm -rf .open-next
+npm run deploy
+```
