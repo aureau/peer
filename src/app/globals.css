@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
+/*
+ * theme — single source of truth for the palette + motion.
+ * swap these vars to revamp the whole look without touching components.
+ */
 :root {
-	--background: #ffffff;
-	--foreground: #171717;
+	/* surfaces: portfolio grey, persistent across the app */
+	--background: #1d1d1d;
+	--primary-dark: #030303;
+	--primary-darker: #0a0a0a;
+
+	/* text */
+	--foreground: #d4d4d4;
+	--muted: #8a8a8a;
+	--muted-strong: #b0b0b0;
+
+	/* button: settles just beneath the grey background, borderless + seamless */
+	--button: #181818;
+	--button-hover: #151515;
+	--ring: #333333;
+
+	/* status (subtle dots only — state at a glance, no loud fills) */
+	--status-unpaired: #6e6e6e;
+	--status-waiting: #c9a253;
+	--status-paired: #5fbf8f;
+	--status-lost: #d6685f;
+
+	/* motion — barely-there, gated by prefers-reduced-motion */
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--dur-fast: 140ms;
+	--dur: 260ms;
+	--dur-slow: 420ms;
 }
 
 @theme inline {
 	--color-background: var(--background);
+	--color-primary-dark: var(--primary-dark);
+	--color-primary-darker: var(--primary-darker);
 	--color-foreground: var(--foreground);
-	--font-sans: var(--font-geist-sans);
-	--font-mono: var(--font-geist-mono);
+	--color-muted: var(--muted);
+	--color-muted-strong: var(--muted-strong);
+	--color-button: var(--button);
+	--color-button-hover: var(--button-hover);
+	--color-ring: var(--ring);
+	--color-status-unpaired: var(--status-unpaired);
+	--color-status-waiting: var(--status-waiting);
+	--color-status-paired: var(--status-paired);
+	--color-status-lost: var(--status-lost);
+
+	--font-sans: var(--font-nunito), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+		"Segoe UI", sans-serif;
+	--font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-	:root {
-		--background: #0a0a0a;
-		--foreground: #ededed;
-	}
+html,
+body {
+	height: 100%;
 }
 
 body {
 	background: var(--background);
 	color: var(--foreground);
-	font-family: Arial, Helvetica, sans-serif;
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+/* --- subtle, reusable entrance transitions --- */
+@keyframes rise-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.animate-rise-in {
+	animation: rise-in var(--dur-slow) var(--ease-out) both;
+}
+
+.animate-fade-in {
+	animation: fade-in var(--dur) var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.animate-rise-in,
+	.animate-fade-in {
+		animation: none;
+	}
 }
