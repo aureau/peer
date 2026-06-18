@@ -50,6 +50,10 @@ export function listItemsSince(index: ItemIndex, cursor: number): ItemIndexEntry
 	return index.items.filter((item) => item.seq > cursor);
 }
 
+export function findItemById(index: ItemIndex, itemId: string): ItemIndexEntry | undefined {
+	return index.items.find((item) => item.itemId === itemId);
+}
+
 export async function deleteItemIndex(
 	bindings: StorageBindings,
 	sessionKey: string,

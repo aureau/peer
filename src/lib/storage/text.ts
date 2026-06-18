@@ -34,7 +34,9 @@ export async function storeText(
 		return { item, inline: true };
 	}
 
-	const r2key = await putR2Object(bindings, sessionKey, itemId, content, "text/plain; charset=utf-8");
+	const r2key = await putR2Object(bindings, sessionKey, itemId, content, {
+		contentType: "text/plain; charset=utf-8",
+	});
 	const item = await appendItem(
 		bindings,
 		sessionKey,

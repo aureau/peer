@@ -1,7 +1,9 @@
+import { SessionError } from "./errors";
 import { wipeSession } from "./wipe";
 import { PAIRED_TTL_SECONDS, UNCLAIMED_TTL_SECONDS } from "./constants";
 import type { StorageBindings } from "./env";
 import { pairKey } from "./keys";
+import { getSessionView } from "./session";
 import type { PairRecord, PairStatus } from "./types";
 
 export function pairTtlForStatus(status: PairStatus): number {
@@ -70,4 +72,43 @@ export async function deletePair(
 	sessionKey: string,
 ): Promise<void> {
 	await bindings.KV.delete(pairKey(sessionKey));
+}
+
+/** waiting -> paired; rejects missing, expired, or already-claimed sessions */
+export async function claimPair(
+	bindings: StorageBindings,
+	sessionKey: string,
+): Promise<PairRecord> {
+	const record = await getPair(bindings, sessionKey);
+	if (!record) {
+		throw new SessionError(
+			"SESSION_NOT_FOUND",
+			"No active session for this key. Check the key or start a new session on the other device.",
+		);
+	}
+
+	const view = getSessionView(record);
+	if (view.status === "expired") {
+		throw new SessionError(
+			"SESSION_EXPIRED",
+			"Session expired. Start a new session on the other device.",
+		);
+	}
+
+	if (record.status === "paired") {
+		throw new SessionError(
+			"SESSION_ALREADY_CLAIMED",
+			"This session is already paired.",
+		);
+	}
+
+	const updated = await setPairStatus(bindings, sessionKey, "paired");
+	if (!updated) {
+		throw new SessionError(
+			"SESSION_NOT_FOUND",
+			"No active session for this key. Check the key or start a new session on the other device.",
+		);
+	}
+
+	return updated;
 }

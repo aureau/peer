@@ -8,6 +8,8 @@ interface __BaseEnv_CloudflareEnv {
 	ASSETS: Fetcher;
 	NEXTJS_ENV: string;
 	WORKER_SELF_REFERENCE: Service<typeof import("./.open-next/worker").default>;
+	/** fixed personal key — set via .dev.vars locally, wrangler secret in prod */
+	ACCESS_TOKEN: string;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {

@@ -66,8 +66,6 @@
 	/**
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
+	 * ACCESS_TOKEN (fixed personal key): .dev.vars locally, `wrangler secret put ACCESS_TOKEN` in prod
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
 }

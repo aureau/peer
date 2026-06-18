@@ -29,3 +29,19 @@ export type StoreTextResult = {
 	item: ItemIndexEntry;
 	inline: boolean;
 };
+
+export type StoreFileResult = {
+	item: ItemIndexEntry;
+};
+
+/** item returned by GET /api/{key}/items poll — text includes content */
+export type PollItem = {
+	itemId: string;
+	type: ItemType;
+	seq: number;
+	size?: number;
+	name?: string;
+	mime?: string;
+	relativePath?: string;
+	content?: string;
+};

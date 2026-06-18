@@ -1,0 +1,2 @@
+NEXTJS_ENV=development
+ACCESS_TOKEN=your-long-high-entropy-secret-here

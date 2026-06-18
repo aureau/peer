@@ -6,3 +6,6 @@ export const PAIRED_TTL_SECONDS = 10 * 60;
 
 /** text at or below this size is stored inline in kv; larger text spills to r2 */
 export const TEXT_INLINE_MAX_BYTES = 32 * 1024;
+
+/** workers free-tier request body limit is 100mb; stay under for multipart overhead */
+export const MAX_FILE_UPLOAD_BYTES = 98 * 1024 * 1024;
