@@ -22,6 +22,11 @@ export type StatusResponse = {
 	expiresIn: number;
 };
 
+/** POST /api/{key}/end response */
+export type EndSessionResponse = {
+	ok: true;
+};
+
 export type ApiErrorBody = {
 	error: string;
 	message: string;

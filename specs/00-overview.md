@@ -21,7 +21,7 @@ A **Next.js (TypeScript + Tailwind)** web app, deployed onto a Cloudflare Worker
 
 1. PC A opens the site and starts a session using my **fixed personal key** (a random short token is also available).
 2. PC B opens the site, enters the same key → the two are paired (session expires in 3 min if no one joins).
-3. PC A drops text / files / a folder; PC B receives them and can copy/download.
+3. PC A sends text / files / a folder; PC B receives and can copy/download. **Default:** initiator (`/`) sends, joiner (`/connect`) receives. Either side can take over send via **send from here** on the receiver workspace (see `13`).
 4. Everything transient by default; ending a session wipes all data and resets both devices to the start state.
 
 This is the **MVP**. Chunked >100MB uploads, images, history, encryption, and Prompt Mode layer on top in later phases.
@@ -70,3 +70,4 @@ This is the **MVP**. Chunked >100MB uploads, images, history, encryption, and Pr
 - `10-ui-ux.md` — screens, states, interactions
 - `11-edge-cases.md` — failure modes, limits, abuse, recovery
 - `12-mvp-build-checklist.md` — tonight's ordered task list
+- `13-role-based-workspace.md` — role-based send/receive workspaces, flip API, migration from shared workspace

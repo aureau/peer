@@ -1,6 +1,7 @@
 import type {
 	ApiErrorBody,
 	ClaimResponse,
+	EndSessionResponse,
 	StartSessionResponse,
 	StatusResponse,
 } from "./types";
@@ -59,4 +60,16 @@ export async function getStatus(key: string, signal?: AbortSignal): Promise<Stat
 		signal,
 	});
 	return parseJson<StatusResponse>(response);
+}
+
+/** wipe all session data server-side and reset both devices to unpaired */
+export async function endSession(
+	key: string,
+	signal?: AbortSignal,
+): Promise<EndSessionResponse> {
+	const response = await fetch(`/api/${encodeURIComponent(key)}/end`, {
+		method: "POST",
+		signal,
+	});
+	return parseJson<EndSessionResponse>(response);
 }

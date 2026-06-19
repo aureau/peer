@@ -21,6 +21,20 @@
 | Two initiators race (random-token mode) | Tokens random + uniqueness-checked on mint; collision → remint. |
 | Stale session lingering when I start a new one with the same fixed key | Starting a fresh session supersedes/clears any prior session for that key. |
 
+## 2b. Role flip (send/receive workspaces)
+
+| Case | Handling |
+|---|---|
+| Receiver clicks **send from here** | `POST /sender` sets `activeSender = peerRole`, bumps `receiveSinceSeq`; both tabs poll status and swap UI. |
+| Sender tries to flip | No flip button on sender; `POST /sender` rejected with `403 NOT_ACTIVE_SENDER` if caller is already sender. |
+| Send from non-active side | `POST /items` with wrong `peerRole` → `403 NOT_ACTIVE_SENDER`. |
+| Double flip race | KV serializes writes; last flip wins. |
+| Refresh mid-session | Status poll restores `activeSender` + `receiveSinceSeq`; receive workspace uses updated seq floor. |
+| Items from prior sender stint | Stay in session index; hidden from new receiver via `receiveSinceSeq` filter (not deleted). |
+| End session | Full wipe including role fields; both tabs reset to unpaired start. |
+
+See `13` for full role model.
+
 ## 3. Files & size
 
 | Case | Handling |

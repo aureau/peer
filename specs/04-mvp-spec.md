@@ -12,6 +12,7 @@ Scope: the minimum that replaces copypaste.me for my two PCs. Text + files, pair
 | 4 | Send one or more files via drag & drop or file picker | ✅ |
 | 4b | Send a **folder** (enumerate files + relative paths) — regular sending | ✅ |
 | 5 | Receiver sees incoming items and can **copy text** / **download files** | ✅ |
+| 5b | Role-based send/receive workspaces; receiver flips send via **send from here** | ✅ |
 | 6 | Items auto-expire (TTL); 3-min unclaimed countdown shown | ✅ |
 | 7 | Clear visual pairing/connection status | ✅ |
 | 8 | End-of-session clears everything + resets to start state | ✅ |
@@ -45,25 +46,27 @@ Since it's **only me** using this across two of my own devices, the default join
 
 ## 3. Sending text
 
-- Textarea + "Send" button.
-- On send: `POST /api/{token}/items` with `{type:"text", content:"..."}`. Stored as a small KV value (or R2 if large), metadata indexed under the token.
+- Textarea + "Send" button (send workspace only — see `13`).
+- On send: `POST /api/{token}/items` with `{ type:"text", content:"...", peerRole }`. Only accepted when `peerRole === activeSender`. Stored as a small KV value (or R2 if large), metadata indexed under the token.
 - No formatting transforms server-side; text is stored and returned verbatim (preserve whitespace/newlines).
 
 ## 4. Sending files
 
-- Drag-drop zone + `<input type=file multiple>` fallback.
-- Per file: `POST /api/{token}/items` (multipart or raw body) → Worker streams into R2 under a key like `{token}/{itemId}/{filename}`; metadata `{type:"file", name, size, mime, itemId}` indexed in KV.
+- Drag-drop zone + `<input type=file multiple>` fallback (send workspace only).
+- Per file: `POST /api/{token}/items` (multipart or raw body) with `peerRole` → Worker streams into R2 under a key like `{token}/{itemId}/{filename}`; metadata `{type:"file", name, size, mime, itemId}` indexed in KV.
 - **Size handling tonight:** **hard cap at 100MB per upload** (the Free request-body limit). Reject larger files with a clear message. No chunking in MVP — deferred to Phase 2. Typical use (<10MB) is trivial; a single file up to 100MB works in one request.
 - Multiple files = multiple items under the same session.
 - **Folder upload (allowed in regular sending):** drag a folder or use `webkitdirectory` to enumerate all files with their relative paths, then send them as individual items (relative path preserved as metadata). This is *not* zipping — it's just multi-file send that understands folder structure. The zip/unzip flow is reserved for Prompt Mode (`08`). Keep each file under the 100MB cap.
 
 ## 5. Receiving
 
-- Receiver polls `GET /api/{token}/items?since={cursor}` every ~2s while tab is open.
+- Only the **receive workspace** tab polls items (`peerRole !== activeSender`). See `13`.
+- Receiver polls `GET /api/{token}/items?since={cursor}` every ~2s while tab is open. Pass `since = max(localCursor, receiveSinceSeq)` so each receiver stint only shows items after the last role flip.
 - New items render in a list, newest first:
   - **Text item:** preview + "Copy" button (uses Clipboard API).
-  - **File item:** name, size, "Download" button → `GET /api/{token}/items/{itemId}/download` streams the R2 object with `Content-Disposition: attachment`.
+  - **File item:** name, size, relative path (folder sends), "Download" button → `GET /api/{token}/items/{itemId}/download` streams the R2 object with `Content-Disposition: attachment`.
 - After successful copy/download, item can be marked seen (cosmetic) but stays until TTL.
+- **Role flip:** current receiver clicks **send from here** → `POST /api/{token}/sender` → both tabs sync via status poll.
 
 ## 6. Status / connection UX (minimum)
 
@@ -93,10 +96,11 @@ Since it's **only me** using this across two of my own devices, the default join
 
 ```
 POST   /api/pair                     → { key }            (start session w/ configured key, or mint random token)
-POST   /api/pair/{key}/claim         → { ok }             (other PC joins)
-GET    /api/{key}/status             → { status, expiresIn }
-POST   /api/{key}/items              → { itemId }         (text or file, ≤100MB)
-GET    /api/{key}/items?since=cursor → { items:[...] }    (poll)
+POST   /api/pair/{key}/claim         → { ok }             (other PC joins; sets activeSender=initiator)
+GET    /api/{key}/status             → { status, expiresIn, activeSender, receiveSinceSeq }
+POST   /api/{key}/sender             → { ok, activeSender, receiveSinceSeq }  (receiver flips send role)
+POST   /api/{key}/items              → { itemId }         (text or file, ≤100MB; requires peerRole)
+GET    /api/{key}/items?since=cursor → { items:[...] }    (poll; receive workspace only)
 GET    /api/{key}/items/{id}/download → file stream
 POST   /api/{key}/end                → { ok }             (clear all KV+R2, reset both devices)
 ```

@@ -21,7 +21,11 @@
         │      KV        │                     │       R2       │
         │ pairing state, │                     │ file payloads  │
         │ metadata,      │                     │ (objects),     │
-        │ history index, │                     │ TTL-deleted    │
+        │ role state     │                     │ TTL-deleted    │
+        │ (activeSender, │                     │                │
+        │ receiveSinceSeq│                     │                │
+        │ in pair record)│                     │                │
+        │ history index, │                     │                │
         │ TTL            │                     │                │
         └───────────────┘                     └───────────────┘
 ```

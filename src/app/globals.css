@@ -20,6 +20,10 @@
 	--button-hover: #151515;
 	--ring: #333333;
 
+	/* drag-over highlight — very subtle purple wash */
+	--drop-highlight: rgb(95 55 135 / 0.07);
+	--drop-highlight-text: rgb(95 55 135 / 0.45);
+
 	/* status (subtle dots only — state at a glance, no loud fills) */
 	--status-unpaired: #6e6e6e;
 	--status-waiting: #c9a253;
@@ -43,6 +47,8 @@
 	--color-button: var(--button);
 	--color-button-hover: var(--button-hover);
 	--color-ring: var(--ring);
+	--color-drop-highlight: var(--drop-highlight);
+	--color-drop-highlight-text: var(--drop-highlight-text);
 	--color-status-unpaired: var(--status-unpaired);
 	--color-status-waiting: var(--status-waiting);
 	--color-status-paired: var(--status-paired);

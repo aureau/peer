@@ -3,3 +3,10 @@ folders
 ip tracking
     - verify session ids with a certain method, only that ip can access the website so other people cant try to exploit the database or get into the site
     this makes it to where we dont necess. have to add so many security features since we're working with personal and work sensitive data
+simple sec measures
+    - right now the api calls shows the key in the header for status, fix that
+    ex. http://localhost:3000/api/<key>/status
+api
+    - status might be polling way too much
+
+- adding a end session

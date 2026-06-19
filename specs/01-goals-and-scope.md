@@ -12,6 +12,7 @@ Replace `copypaste.me` in my personal workflow with something I own, that is tun
 - [ ] Work PC generates a token; personal PC enters it; they pair within a few seconds.
 - [ ] I can send a multi-paragraph block of text and paste it cleanly on the other side.
 - [ ] I can drag-drop one or several files (<10MB total typical) and download them on the other side intact (byte-identical).
+- [ ] Reverse direction (personal → work) works via **send from here** on the receive side (`13`); default is work sends, personal receives.
 - [ ] It works on the **work network** end to end (the real test — a localhost demo proves nothing).
 
 **Phase 2 is a success if:**

@@ -28,16 +28,27 @@ Ordered so each step produces something testable. Stop-and-test on the **work ne
 - [ ] UI: "Start session" + **3-min countdown**; other device enters the key + "Connect"; both poll status.
 - [ ] **TEST:** pair work PC ↔ personal PC. Both show "Paired."
 
+## 3b. Role-based workspaces (30 min)
+
+> Supersedes the interim #28 shared workspace (send UI on both tabs). See `13`.
+
+- [ ] Extend `PairRecord`: `activeSender`, `receiveSinceSeq` (default initiator / 0 on claim).
+- [ ] `GET /api/{key}/status` → include `activeSender`, `receiveSinceSeq`.
+- [ ] `POST /api/{key}/sender` → receiver flips send role; bump `receiveSinceSeq`.
+- [ ] `POST /api/{key}/items` → require `peerRole`; reject if not `activeSender`.
+- [ ] UI: split send vs receive workspace by `peerRole` vs `activeSender`; **send from here** on receiver only.
+- [ ] **TEST:** default initiator sends, joiner receives; flip on joiner; initiator now receives new items only (post-flip).
+
 ## 4. Text transfer (30 min)
 - [ ] `POST /api/{key}/items` (text).
 - [ ] `GET /api/{key}/items?since=cursor` (poll).
-- [ ] UI: textarea + send; received list + Copy (render via `textContent`, never `innerHTML`).
+- [ ] UI: textarea + send (send workspace); received list + Copy on **receive workspace only** (render via `textContent`, never `innerHTML`; filter `seq > receiveSinceSeq`).
 - [ ] **TEST:** send a multi-line block across; paste verifies intact.
 
 ## 5. File transfer + folder send (50 min)
 - [ ] `POST /api/{key}/items` streams file → R2; metadata → KV. **Enforce the 100MB hard cap**; reject larger with a clear error.
 - [ ] `GET /api/{key}/items/{id}/download` streams from R2 with `Content-Disposition: attachment`.
-- [ ] UI: drop zone + file picker + **folder picker (`webkitdirectory`)**; folder send enumerates files with relative paths as items; received rows + Download; per-file progress.
+- [ ] UI: drop zone + file picker + **folder picker (`webkitdirectory`)** on send workspace; received rows + Download on receive workspace; per-file progress.
 - [ ] **TEST:** send a <10MB file and a small folder; download; confirm byte-identical (`shasum` both ends) and folder structure preserved in metadata.
 
 ## 6. Session end + safety minimums (30 min)

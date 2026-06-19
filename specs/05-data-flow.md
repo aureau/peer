@@ -29,21 +29,49 @@ PC A (work)                 Worker / KV                  PC B (personal)
 ```
 
 Notes:
-- The token is the shared secret *and* the channel id. Either device can send/receive (channel is bidirectional even if my usual direction is work→personal).
+- The token is the shared secret *and* the channel id. **Default flow is asymmetric:** initiator (`/`) sends, joiner (`/connect`) receives. Only one side sends at a time; the receiver can take over via **send from here** (`13`).
 - Single-claim: a second `claim` on an already-paired token is rejected (prevents a stray third party hijacking).
+
+## 1b. Role flip flow
+
+```
+Receiver tab                 Worker / KV                  Sender tab
+   │                            │                              │
+   │  POST /api/{key}/sender    │                              │
+   │  { peerRole: "joiner" }    │                              │
+   │ ─────────────────────────► │ activeSender = joiner        │
+   │                            │ receiveSinceSeq = maxSeq     │
+   │  { ok, activeSender,       │                              │
+   │    receiveSinceSeq }       │                              │
+   │ ◄───────────────────────── │                              │
+   │                            │  GET /status (poll)          │
+   │                            │ ◄─────────────────────────── │
+   │                            │  { activeSender: joiner,     │
+   │                            │    receiveSinceSeq: N }      │
+   │                            │ ────────────────────────────►│
+   │  UI → Send workspace       │         UI → Receive workspace│
+   ▼                            ▼                              ▼
+```
+
+- Only the **current receiver** may call `POST /sender`.
+- Both tabs poll `GET /status` to detect flips and switch workspace mode.
 
 ## 2. Text send → receive
 
 ```
-PC A                          Worker                         PC B
+PC A (sender)                 Worker                         PC B (receiver)
  │ type text, click Send       │                              │
  │ POST /{token}/items         │                              │
- │ {type:text, content}        │                              │
- │ ──────────────────────────► │ store value (KV or R2)       │
+ │ {type:text, content,         │                              │
+ │  peerRole:initiator}        │                              │
+ │ ──────────────────────────► │ reject if peerRole ≠         │
+ │                             │ activeSender; else store     │
  │                             │ index item under token       │
  │ { itemId, cursor }          │                              │
  │ ◄────────────────────────── │                              │
  │                             │   GET /{token}/items?since=c │
+ │                             │   (c = max(cursor,           │
+ │                             │    receiveSinceSeq))         │
  │                             │ ◄─────────────────────────── │  (poll ~2s)
  │                             │   { items:[{text,...}] }     │
  │                             │ ────────────────────────────►│
@@ -54,9 +82,10 @@ PC A                          Worker                         PC B
 ## 3. File send → receive (small, single request)
 
 ```
-PC A                          Worker                  R2          PC B
+PC A (sender)                 Worker                  R2          PC B (receiver)
  │ drop file                   │                       │           │
- │ POST /{token}/items (bytes) │                       │           │
+ │ POST /{token}/items         │                       │           │
+ │ (peerRole + bytes)          │                       │           │
  │ ──────────────────────────► │ stream put ──────────►│           │
  │                             │ KV: meta{name,size,id}│           │
  │ { itemId }                  │                       │           │
@@ -94,12 +123,14 @@ PC A                                   Worker / R2
 - Each item gets a monotonic `seq` (or timestamp+id) under the token.
 - Receiver tracks the highest `seq` seen (`cursor`).
 - `GET /items?since=cursor` returns only newer items → cheap, no dupes.
+- In receive mode, pass `since = max(localCursor, receiveSinceSeq)` so each receiver stint only surfaces post-flip items (`13`).
 - Poll cadence: ~2s while tab focused; back off to ~10s when blurred; pause when hidden (Page Visibility API) to conserve request budget.
+- **Sender tab** polls status only (flip detection + session end). **Receiver tab** polls status + items.
 
 ## 6. State stored
 
 **KV (small, fast):**
-- `pair:{token}` → `{ status, created, lastActive }` (TTL)
+- `pair:{token}` → `{ status, created, lastActive, activeSender, receiveSinceSeq }` (TTL)
 - `items:{token}` → ordered index of `{ itemId, type, name?, size?, mime?, seq, r2key? }` (TTL)
 - small text payloads inline; large text spills to R2.
 
