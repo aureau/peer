@@ -97,7 +97,9 @@ export async function requireActiveSender(
 
 /**
  * Flip the active sender to the caller. Only the current receiver may flip.
- * Sets activeSender = peerRole and receiveSinceSeq = highest seq in the index.
+ * Sets activeSender = peerRole and receiveSinceSeq = highest seq in the index
+ * (or -1 when empty, matching the "nothing seen yet" cursor sentinel so the
+ * new receiver sees every item from seq 0 onward).
  */
 export async function flipSender(
 	bindings: StorageBindings,
@@ -113,7 +115,7 @@ export async function flipSender(
 	}
 
 	const index = await getItemIndex(bindings, sessionKey);
-	const maxSeqInIndex = index.items.reduce((max, item) => Math.max(max, item.seq), 0);
+	const maxSeqInIndex = index.items.reduce((max, item) => Math.max(max, item.seq), -1);
 
 	record.activeSender = peerRole;
 	record.receiveSinceSeq = maxSeqInIndex;

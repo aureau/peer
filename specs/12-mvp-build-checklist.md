@@ -32,7 +32,7 @@ Ordered so each step produces something testable. Stop-and-test on the **work ne
 
 > Supersedes the interim #28 shared workspace (send UI on both tabs). See `13`.
 
-- [ ] Extend `PairRecord`: `activeSender`, `receiveSinceSeq` (default initiator / 0 on claim).
+- [ ] Extend `PairRecord`: `activeSender`, `receiveSinceSeq` (default initiator / -1 on claim).
 - [ ] `GET /api/{key}/status` → include `activeSender`, `receiveSinceSeq`.
 - [ ] `POST /api/{key}/sender` → receiver flips send role; bump `receiveSinceSeq`.
 - [ ] `POST /api/{key}/items` → require `peerRole`; reject if not `activeSender`.

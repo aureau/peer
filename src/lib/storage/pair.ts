@@ -41,7 +41,7 @@ export async function createPair(
 		created: now,
 		lastActive: now,
 		activeSender: "initiator",
-		receiveSinceSeq: 0,
+		receiveSinceSeq: -1,
 	};
 	await putPair(bindings, sessionKey, record);
 	return record;
@@ -110,7 +110,7 @@ export async function claimPair(
 
 	record.status = "paired";
 	record.activeSender = "initiator";
-	record.receiveSinceSeq = 0;
+	record.receiveSinceSeq = -1;
 	record.lastActive = new Date().toISOString();
 	await putPair(bindings, sessionKey, record);
 	return record;

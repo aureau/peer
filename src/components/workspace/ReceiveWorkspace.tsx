@@ -2,18 +2,19 @@
 
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { ReceivedList } from "./ReceivedList";
 
 type ReceiveWorkspaceProps = {
-	/** paired session key — consumed by the #29 received-items list */
+	/** paired session key — channel id for the received-items poll/download */
 	sessionKey: string;
-	/** seq floor for this receiver stint — consumed by the #29 list poll */
+	/** seq floor for this receiver stint — only items with seq > this are shown */
 	receiveSinceSeq: number;
 	/** take over the send role; resolves once the server flip succeeds */
 	onFlip: () => Promise<void>;
 };
 
-/** current-receiver view: received items list (#29 placeholder) + send-from-here flip */
-export function ReceiveWorkspace({ onFlip }: ReceiveWorkspaceProps) {
+/** current-receiver view: received items list + send-from-here flip */
+export function ReceiveWorkspace({ sessionKey, receiveSinceSeq, onFlip }: ReceiveWorkspaceProps) {
 	const [flipping, setFlipping] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -31,9 +32,7 @@ export function ReceiveWorkspace({ onFlip }: ReceiveWorkspaceProps) {
 
 	return (
 		<div className="flex w-full flex-col gap-8">
-			<div className="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-ring px-6 py-10">
-				<p className="text-sm text-muted/80">waiting for items…</p>
-			</div>
+			<ReceivedList sessionKey={sessionKey} receiveSinceSeq={receiveSinceSeq} />
 
 			<div className="flex flex-col items-center gap-2">
 				<Button

@@ -68,7 +68,7 @@ export function Workspace({ sessionKey, peerRole, onLeave }: WorkspaceProps) {
 	return (
 		<div className="animate-fade-in flex w-full max-w-2xl flex-col gap-8">
 			<div className="flex items-center justify-between">
-				<ConnectionStatus state="paired" />
+				<ConnectionStatus state={state === "lost" ? "lost" : "paired"} />
 				<Button variant="ghost" onClick={() => void onEndSession()} loading={ending}>
 					end session
 				</Button>
@@ -79,7 +79,7 @@ export function Workspace({ sessionKey, peerRole, onLeave }: WorkspaceProps) {
 			) : (
 				<ReceiveWorkspace
 					sessionKey={sessionKey}
-					receiveSinceSeq={receiveSinceSeq ?? 0}
+					receiveSinceSeq={receiveSinceSeq ?? -1}
 					onFlip={onFlip}
 				/>
 			)}

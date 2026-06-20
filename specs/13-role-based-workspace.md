@@ -37,7 +37,7 @@ Both tabs had textarea, drag-drop, file/folder pickers, and end session. No rece
 |---|---|
 | **peerRole** | Fixed for the tab for the whole session: `initiator` (paired via `/`) or `joiner` (paired via `/connect`). Never changes. |
 | **activeSender** | Server field on the pair record: `initiator` \| `joiner`. Who may send right now. Defaults to `initiator` when the session becomes `paired`. |
-| **receiveSinceSeq** | Server field: monotonic seq floor for the **current receiver stint**. Bumped on every role flip. Receiver UI shows items with `seq > receiveSinceSeq` only. |
+| **receiveSinceSeq** | Server field: monotonic seq floor for the **current receiver stint**. Bumped on every role flip. Receiver UI shows items with `seq > receiveSinceSeq` only. Defaults to `-1` ("nothing seen yet") so a fresh receiver sees every item from `seq 0`. |
 | **Send workspace** | Textarea, whole-window drop target, file/folder pickers. No received list. Only rendered when `peerRole === activeSender`. |
 | **Receive workspace** | Received items list (newest first), copy/download, **send from here** flip button. Only rendered when `peerRole !== activeSender`. |
 
@@ -90,7 +90,7 @@ Same calm theme as the current app (`10-ui-ux.md` §5). Single column, desktop-f
 
 - All items remain in the session index until end/expiry. **Nothing is deleted on flip.**
 - Items sent before a flip stay in KV/R2 with existing metadata (no new "owner" field). They remain attributed to whoever sent them during that stint.
-- On flip, server sets `receiveSinceSeq = maxSeqInIndex` (highest `seq` currently in the item index, or `0` if empty).
+- On flip, server sets `receiveSinceSeq = maxSeqInIndex` (highest `seq` currently in the item index, or `-1` if empty — `seq` is 0-based, so `-1` is the "show everything" floor).
 - Receiver UI displays only items where **`seq > receiveSinceSeq`**.
 - Rationale: after a flip, the new receiver only sees **new** traffic for that direction. Prior-stint items are not re-shown, avoiding confusion when roles swap back and forth.
 - If the same peer becomes receiver again after a second flip, `receiveSinceSeq` advances again — each receiver stint gets a fresh floor.
@@ -106,10 +106,10 @@ status: "waiting" | "paired"
 created: string
 lastActive: string
 activeSender: "initiator" | "joiner"   // default "initiator" on claim
-receiveSinceSeq: number               // default 0; bumped on flip
+receiveSinceSeq: number               // default -1 (show everything); bumped on flip
 ```
 
-Set on successful claim: `activeSender: "initiator"`, `receiveSinceSeq: 0`.
+Set on successful claim: `activeSender: "initiator"`, `receiveSinceSeq: -1`.
 
 ### `GET /api/{key}/status`
 

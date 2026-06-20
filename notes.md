@@ -10,3 +10,12 @@ api
     - status might be polling way too much
 
 - adding a end session
+
+- wrap my head around polling and seq more
+
+RecievedItemCard is just terrible, edit that later
+    - also maybe adding a preview if it spills over x amount of text, and hovering over briefly shows the texts
+    - also more implementation around recieved list, when folders are uploaded the files should be nested under the folder, download as a folder, and able to expand to see all files in a SMALLER view (so seperate list/card styles)
+    - if its large enough it implements a scrollable thing on the card, still dont like it - reiterate to something better
+
+- where is the recieved items going after flipped session? when flipped back are we still keeping them? are they still in cloudflare?

@@ -1,5 +1,5 @@
 import type { PeerRole } from "@/lib/pairing/types";
-import type { ApiErrorBody, SendItemResponse } from "./types";
+import type { ApiErrorBody, PollItemsResponse, SendItemResponse } from "./types";
 
 /** thrown for non-2xx item API responses */
 export class ItemsApiError extends Error {
@@ -69,4 +69,22 @@ export async function sendFile(
 		signal: options?.signal,
 	});
 	return parseJson<SendItemResponse>(response);
+}
+
+/** poll for items with `seq > since` (receive workspace only) */
+export async function pollItems(
+	key: string,
+	since: number,
+	signal?: AbortSignal,
+): Promise<PollItemsResponse> {
+	const response = await fetch(
+		`/api/${encodeURIComponent(key)}/items?since=${encodeURIComponent(since)}`,
+		{ method: "GET", signal },
+	);
+	return parseJson<PollItemsResponse>(response);
+}
+
+/** URL for the streamed download of a single item */
+export function itemDownloadUrl(key: string, itemId: string): string {
+	return `/api/${encodeURIComponent(key)}/items/${encodeURIComponent(itemId)}/download`;
 }
