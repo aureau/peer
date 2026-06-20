@@ -1,9 +1,20 @@
 export type PairStatus = "waiting" | "paired";
 
+/** fixed per tab for the session: which route claimed the pair */
+export type PeerRole = "initiator" | "joiner";
+
+export function isPeerRole(value: unknown): value is PeerRole {
+	return value === "initiator" || value === "joiner";
+}
+
 export type PairRecord = {
 	status: PairStatus;
 	created: string;
 	lastActive: string;
+	/** who may send right now; defaults to "initiator" on claim */
+	activeSender: PeerRole;
+	/** seq floor for the current receiver stint; bumped on every flip */
+	receiveSinceSeq: number;
 };
 
 export type ItemType = "text" | "file";

@@ -4,9 +4,9 @@ import type { StorageBindings } from "./env";
 import { generateItemId } from "./ids";
 import { appendItem } from "./items";
 import { putR2Object } from "./r2";
-import { requirePairedSession } from "./access";
+import { requireActiveSender } from "./access";
 import { sessionTtlForRecord } from "./session";
-import type { StoreFileResult } from "./types";
+import type { PeerRole, StoreFileResult } from "./types";
 
 type StoreFileInput = {
 	name: string;
@@ -15,6 +15,8 @@ type StoreFileInput = {
 	body: ReadableStream<Uint8Array> | ArrayBuffer | string | null;
 	/** required for streams — multipart file.size or content-length header */
 	declaredSize: number;
+	/** caller role; must equal activeSender */
+	peerRole: PeerRole;
 };
 
 function fileTooLargeError(): UploadError {
@@ -83,7 +85,9 @@ export async function storeFile(
 	sessionKey: string,
 	input: StoreFileInput,
 ): Promise<StoreFileResult> {
-	const record = await requirePairedSession(bindings, sessionKey, { rollTtl: true });
+	const record = await requireActiveSender(bindings, sessionKey, input.peerRole, {
+		rollTtl: true,
+	});
 	const expirationTtl = sessionTtlForRecord(record);
 	const itemId = generateItemId();
 	const name = fileBasename(input.name);

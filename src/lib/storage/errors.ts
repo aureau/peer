@@ -2,7 +2,8 @@ export type SessionErrorCode =
 	| "SESSION_NOT_FOUND"
 	| "SESSION_EXPIRED"
 	| "SESSION_NOT_PAIRED"
-	| "SESSION_ALREADY_CLAIMED";
+	| "SESSION_ALREADY_CLAIMED"
+	| "NOT_ACTIVE_SENDER";
 
 export class SessionError extends Error {
 	readonly code: SessionErrorCode;

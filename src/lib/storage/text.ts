@@ -5,8 +5,8 @@ import { appendItem } from "./items";
 import { putR2Object } from "./r2";
 import { generateItemId } from "./ids";
 import { sessionTtlForRecord } from "./session";
-import { requirePairedSession } from "./access";
-import type { StoreTextResult } from "./types";
+import { requireActiveSender } from "./access";
+import type { PeerRole, StoreTextResult } from "./types";
 
 function textByteLength(content: string): number {
 	return new TextEncoder().encode(content).byteLength;
@@ -16,8 +16,9 @@ export async function storeText(
 	bindings: StorageBindings,
 	sessionKey: string,
 	content: string,
+	peerRole: PeerRole,
 ): Promise<StoreTextResult> {
-	const record = await requirePairedSession(bindings, sessionKey, { rollTtl: true });
+	const record = await requireActiveSender(bindings, sessionKey, peerRole, { rollTtl: true });
 	const expirationTtl = sessionTtlForRecord(record);
 	const itemId = generateItemId();
 	const size = textByteLength(content);

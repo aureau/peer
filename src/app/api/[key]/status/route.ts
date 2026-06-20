@@ -27,6 +27,15 @@ export async function GET(_request: Request, context: RouteContext) {
 	}
 
 	const view = getSessionView(record);
+	if (view.status === "paired") {
+		return Response.json({
+			status: view.status,
+			expiresIn: view.expiresIn,
+			activeSender: record.activeSender,
+			receiveSinceSeq: record.receiveSinceSeq,
+		});
+	}
+
 	return Response.json({
 		status: view.status,
 		expiresIn: view.expiresIn,

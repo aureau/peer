@@ -20,6 +20,10 @@ export type ClaimResponse = {
 export type StatusResponse = {
 	status: "unpaired" | "waiting" | "paired" | "expired";
 	expiresIn: number;
+	/** present only when status === "paired" */
+	activeSender?: "initiator" | "joiner";
+	/** present only when status === "paired" */
+	receiveSinceSeq?: number;
 };
 
 /** POST /api/{key}/end response */

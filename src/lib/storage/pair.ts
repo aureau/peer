@@ -36,7 +36,13 @@ export async function createPair(
 	await wipeSession(bindings, sessionKey);
 
 	const now = new Date().toISOString();
-	const record: PairRecord = { status, created: now, lastActive: now };
+	const record: PairRecord = {
+		status,
+		created: now,
+		lastActive: now,
+		activeSender: "initiator",
+		receiveSinceSeq: 0,
+	};
 	await putPair(bindings, sessionKey, record);
 	return record;
 }
@@ -102,13 +108,10 @@ export async function claimPair(
 		);
 	}
 
-	const updated = await setPairStatus(bindings, sessionKey, "paired");
-	if (!updated) {
-		throw new SessionError(
-			"SESSION_NOT_FOUND",
-			"No active session for this key. Check the key or start a new session on the other device.",
-		);
-	}
-
-	return updated;
+	record.status = "paired";
+	record.activeSender = "initiator";
+	record.receiveSinceSeq = 0;
+	record.lastActive = new Date().toISOString();
+	await putPair(bindings, sessionKey, record);
+	return record;
 }

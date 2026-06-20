@@ -20,7 +20,7 @@ export async function GET() {
 	await setPairStatus(bindings, SESSION_KEY, "paired");
 	const paired = await getPair(bindings, SESSION_KEY);
 
-	const small = await storeText(bindings, SESSION_KEY, "hello from inline kv");
+	const small = await storeText(bindings, SESSION_KEY, "hello from inline kv", "initiator");
 	const smallContent = await getTextContent(
 		bindings,
 		SESSION_KEY,

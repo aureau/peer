@@ -1,7 +1,9 @@
 import {
 	fileBasename,
 	getStorageBindings,
+	isPeerRole,
 	MAX_FILE_UPLOAD_BYTES,
+	type PeerRole,
 	pollItems,
 	SessionError,
 	sessionErrorResponse,
@@ -16,12 +18,29 @@ type RouteContext = { params: Promise<{ key: string }> };
 type TextUploadBody = {
 	type: "text";
 	content: string;
+	peerRole: PeerRole;
 };
 
 const ITEMS_ERROR_STATUS: Partial<Record<SessionError["code"], number>> = {
 	SESSION_EXPIRED: 410,
 	SESSION_NOT_PAIRED: 403,
+	NOT_ACTIVE_SENDER: 403,
 };
+
+function invalidPeerRoleResponse(): Response {
+	return Response.json(
+		{
+			error: "INVALID_PEER_ROLE",
+			message: 'Missing or invalid peerRole; expected "initiator" or "joiner".',
+		},
+		{ status: 400 },
+	);
+}
+
+/** narrow any wire value (form field, header, body) to a PeerRole or null */
+function coercePeerRole(candidate: unknown): PeerRole | null {
+	return isPeerRole(candidate) ? candidate : null;
+}
 
 function parseSinceCursor(raw: string | null): number | null {
 	if (raw === null) return -1;
@@ -33,9 +52,9 @@ function parseSinceCursor(raw: string | null): number | null {
 
 function parseTextUploadBody(body: unknown): TextUploadBody | null {
 	if (!body || typeof body !== "object") return null;
-	const { type, content } = body as Record<string, unknown>;
-	if (type !== "text" || typeof content !== "string") return null;
-	return { type, content };
+	const { type, content, peerRole } = body as Record<string, unknown>;
+	if (type !== "text" || typeof content !== "string" || !isPeerRole(peerRole)) return null;
+	return { type, content, peerRole };
 }
 
 function optionalRelativePath(value: FormDataEntryValue | string | null): string | undefined {
@@ -83,13 +102,14 @@ async function handleTextUpload(request: Request, key: string): Promise<Response
 		return Response.json(
 			{
 				error: "INVALID_PAYLOAD",
-				message: 'Expected { type: "text", content: string }.',
+				message:
+					'Expected { type: "text", content: string, peerRole: "initiator" | "joiner" }.',
 			},
 			{ status: 400 },
 		);
 	}
 
-	const { item } = await storeText(bindings, key, payload.content);
+	const { item } = await storeText(bindings, key, payload.content, payload.peerRole);
 	return uploadSuccessResponse(item.itemId, item.seq);
 }
 
@@ -102,12 +122,20 @@ async function handleMultipartFileUpload(request: Request, key: string): Promise
 		throw new UploadError("INVALID_FILE", 'Missing "file" field in multipart upload.');
 	}
 
+	const peerRole = coercePeerRole(
+		formData.get("peerRole") ?? request.headers.get("X-Peer-Role"),
+	);
+	if (!peerRole) {
+		return invalidPeerRoleResponse();
+	}
+
 	const { item } = await storeFile(bindings, key, {
 		name: file.name,
 		mime: file.type || undefined,
 		relativePath: optionalRelativePath(formData.get("relativePath")),
 		body: file.stream(),
 		declaredSize: file.size,
+		peerRole,
 	});
 
 	return uploadSuccessResponse(item.itemId, item.seq);
@@ -139,6 +167,11 @@ async function handleRawFileUpload(request: Request, key: string): Promise<Respo
 		);
 	}
 
+	const peerRole = coercePeerRole(request.headers.get("X-Peer-Role"));
+	if (!peerRole) {
+		return invalidPeerRoleResponse();
+	}
+
 	const { item } = await storeFile(bindings, key, {
 		name: fileBasename(rawName),
 		mime: request.headers.get("content-type")?.split(";")[0]?.trim() || undefined,
@@ -147,6 +180,7 @@ async function handleRawFileUpload(request: Request, key: string): Promise<Respo
 		),
 		body: request.body,
 		declaredSize,
+		peerRole,
 	});
 
 	return uploadSuccessResponse(item.itemId, item.seq);

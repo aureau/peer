@@ -1,9 +1,9 @@
 import { SessionError } from "./errors";
 import type { StorageBindings } from "./env";
-import { refreshItemIndexTtl } from "./items";
-import { getPair, pairTtlForStatus, touchPair } from "./pair";
+import { getItemIndex, refreshItemIndexTtl } from "./items";
+import { getPair, pairTtlForStatus, putPair, touchPair } from "./pair";
 import { getSessionView } from "./session";
-import type { PairRecord } from "./types";
+import type { PairRecord, PeerRole } from "./types";
 
 type RequireSessionOptions = {
 	/** bump lastActive and re-apply kv ttl (default true) */
@@ -75,5 +75,49 @@ export async function requirePairedSession(
 			"Session is not paired yet. Wait for the other device to connect.",
 		);
 	}
+	return record;
+}
+
+/** paired session where the caller's role is the active sender; rolls ttl by default */
+export async function requireActiveSender(
+	bindings: StorageBindings,
+	sessionKey: string,
+	peerRole: PeerRole,
+	options?: RequirePairedOptions,
+): Promise<PairRecord> {
+	const record = await requirePairedSession(bindings, sessionKey, options);
+	if (record.activeSender !== peerRole) {
+		throw new SessionError(
+			"NOT_ACTIVE_SENDER",
+			"This device is not the active sender. The other device currently has the send role.",
+		);
+	}
+	return record;
+}
+
+/**
+ * Flip the active sender to the caller. Only the current receiver may flip.
+ * Sets activeSender = peerRole and receiveSinceSeq = highest seq in the index.
+ */
+export async function flipSender(
+	bindings: StorageBindings,
+	sessionKey: string,
+	peerRole: PeerRole,
+): Promise<PairRecord> {
+	const record = await requirePairedSession(bindings, sessionKey, { rollTtl: true });
+	if (record.activeSender === peerRole) {
+		throw new SessionError(
+			"NOT_ACTIVE_SENDER",
+			"Only the current receiver can take over sending.",
+		);
+	}
+
+	const index = await getItemIndex(bindings, sessionKey);
+	const maxSeqInIndex = index.items.reduce((max, item) => Math.max(max, item.seq), 0);
+
+	record.activeSender = peerRole;
+	record.receiveSinceSeq = maxSeqInIndex;
+	record.lastActive = new Date().toISOString();
+	await putPair(bindings, sessionKey, record);
 	return record;
 }
