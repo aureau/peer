@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getStatus } from "./api";
+import type { PeerRole } from "./types";
 
 /** poll cadence (spec §5): fast while focused, back off when blurred, pause when hidden */
 const POLL_FOCUSED_MS = 2000;
@@ -15,6 +16,10 @@ export type SessionStatus = {
 	state: PollState;
 	/** latest server `expiresIn`; re-synced every successful poll */
 	expiresIn: number;
+	/** who may send right now; only present once `paired` */
+	activeSender?: PeerRole;
+	/** seq floor for the current receiver stint; only present once `paired` */
+	receiveSinceSeq?: number;
 };
 
 /**
@@ -25,6 +30,8 @@ export type SessionStatus = {
 export function useSessionStatus(sessionKey: string | null, enabled = true): SessionStatus {
 	const [state, setState] = useState<PollState>("loading");
 	const [expiresIn, setExpiresIn] = useState(0);
+	const [activeSender, setActiveSender] = useState<PeerRole | undefined>(undefined);
+	const [receiveSinceSeq, setReceiveSinceSeq] = useState<number | undefined>(undefined);
 	const failuresRef = useRef(0);
 
 	useEffect(() => {
@@ -55,6 +62,8 @@ export function useSessionStatus(sessionKey: string | null, enabled = true): Ses
 				failuresRef.current = 0;
 				setExpiresIn(result.expiresIn);
 				setState(result.status);
+				setActiveSender(result.activeSender);
+				setReceiveSinceSeq(result.receiveSinceSeq);
 
 				// terminal: stop polling, let the view reset
 				if (result.status === "expired" || result.status === "unpaired") return;
@@ -75,5 +84,5 @@ export function useSessionStatus(sessionKey: string | null, enabled = true): Ses
 		};
 	}, [sessionKey, enabled]);
 
-	return { state, expiresIn };
+	return { state, expiresIn, activeSender, receiveSinceSeq };
 }

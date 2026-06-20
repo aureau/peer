@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/Button";
 import { TextArea } from "@/components/ui/TextArea";
 import { sendText } from "@/lib/items/api";
 import { itemsErrorMessage } from "@/lib/items/errors";
+import type { PeerRole } from "@/lib/pairing/types";
 
 type TextSendAreaProps = {
 	sessionKey: string;
+	peerRole: PeerRole;
 };
 
-export function TextSendArea({ sessionKey }: TextSendAreaProps) {
+export function TextSendArea({ sessionKey, peerRole }: TextSendAreaProps) {
 	const [text, setText] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -23,14 +25,14 @@ export function TextSendArea({ sessionKey }: TextSendAreaProps) {
 		setLoading(true);
 		setError(null);
 		try {
-			await sendText(sessionKey, text);
+			await sendText(sessionKey, text, peerRole);
 			setText("");
 		} catch (err) {
 			setError(itemsErrorMessage(err));
 		} finally {
 			setLoading(false);
 		}
-	}, [sessionKey, text, loading]);
+	}, [sessionKey, peerRole, text, loading]);
 
 	const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
 		if (event.key !== "Enter" || (!event.ctrlKey && !event.metaKey)) return;

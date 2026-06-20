@@ -2,6 +2,8 @@ import type {
 	ApiErrorBody,
 	ClaimResponse,
 	EndSessionResponse,
+	PeerRole,
+	SetSenderResponse,
 	StartSessionResponse,
 	StatusResponse,
 } from "./types";
@@ -60,6 +62,21 @@ export async function getStatus(key: string, signal?: AbortSignal): Promise<Stat
 		signal,
 	});
 	return parseJson<StatusResponse>(response);
+}
+
+/** take over the send role; only the current receiver may flip */
+export async function setSender(
+	key: string,
+	peerRole: PeerRole,
+	signal?: AbortSignal,
+): Promise<SetSenderResponse> {
+	const response = await fetch(`/api/${encodeURIComponent(key)}/sender`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ peerRole }),
+		signal,
+	});
+	return parseJson<SetSenderResponse>(response);
 }
 
 /** wipe all session data server-side and reset both devices to unpaired */

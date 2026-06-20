@@ -1,3 +1,4 @@
+import type { PeerRole } from "@/lib/pairing/types";
 import type { ApiErrorBody, SendItemResponse } from "./types";
 
 /** thrown for non-2xx item API responses */
@@ -36,12 +37,13 @@ async function parseJson<T>(response: Response): Promise<T> {
 export async function sendText(
 	key: string,
 	content: string,
+	peerRole: PeerRole,
 	signal?: AbortSignal,
 ): Promise<SendItemResponse> {
 	const response = await fetch(`/api/${encodeURIComponent(key)}/items`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ type: "text", content }),
+		body: JSON.stringify({ type: "text", content, peerRole }),
 		signal,
 	});
 	return parseJson<SendItemResponse>(response);
@@ -51,10 +53,12 @@ export async function sendText(
 export async function sendFile(
 	key: string,
 	file: File,
+	peerRole: PeerRole,
 	options?: { relativePath?: string; signal?: AbortSignal },
 ): Promise<SendItemResponse> {
 	const form = new FormData();
 	form.append("file", file);
+	form.append("peerRole", peerRole);
 	if (options?.relativePath) {
 		form.append("relativePath", options.relativePath);
 	}

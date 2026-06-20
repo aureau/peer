@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { sendFile } from "@/lib/items/api";
 import { itemsErrorMessage } from "@/lib/items/errors";
 import { assertFilesWithinLimit, toUploadEntries } from "@/lib/items/files";
+import type { PeerRole } from "@/lib/pairing/types";
 
 export type UploadPreview = {
 	count: number;
@@ -11,7 +12,7 @@ export type UploadPreview = {
 };
 
 /** shared upload path for drag-drop, file picker, and folder picker */
-export function useFileUpload(sessionKey: string) {
+export function useFileUpload(sessionKey: string, peerRole: PeerRole) {
 	const [uploadPreview, setUploadPreview] = useState<UploadPreview | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const uploadingRef = useRef(false);
@@ -36,7 +37,9 @@ export function useFileUpload(sessionKey: string) {
 
 			try {
 				for (const entry of entries) {
-					await sendFile(sessionKey, entry.file, { relativePath: entry.relativePath });
+					await sendFile(sessionKey, entry.file, peerRole, {
+						relativePath: entry.relativePath,
+					});
 				}
 			} catch (err) {
 				setError(itemsErrorMessage(err));
@@ -45,7 +48,7 @@ export function useFileUpload(sessionKey: string) {
 				setUploadPreview(null);
 			}
 		},
-		[sessionKey],
+		[sessionKey, peerRole],
 	);
 
 	return { uploadFiles, uploadPreview, error };

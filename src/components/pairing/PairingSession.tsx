@@ -48,7 +48,7 @@ export function PairingSession({
 	}, [state, onReset]);
 
 	if (state === "paired") {
-		return <Workspace sessionKey={sessionKey} onLeave={onLeave} />;
+		return <Workspace sessionKey={sessionKey} peerRole={role} onLeave={onLeave} />;
 	}
 
 	const lost = state === "lost";
