@@ -47,18 +47,6 @@ export async function createPair(
 	return record;
 }
 
-export async function touchPair(
-	bindings: StorageBindings,
-	sessionKey: string,
-): Promise<PairRecord | null> {
-	const record = await getPair(bindings, sessionKey);
-	if (!record) return null;
-
-	record.lastActive = new Date().toISOString();
-	await putPair(bindings, sessionKey, record);
-	return record;
-}
-
 export async function setPairStatus(
 	bindings: StorageBindings,
 	sessionKey: string,

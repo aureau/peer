@@ -35,3 +35,17 @@ export function uploadErrorResponse(error: UploadError): Response {
 	const status = error.code === "FILE_TOO_LARGE" ? 413 : 400;
 	return Response.json({ error: error.code, message: error.message }, { status });
 }
+
+/** cloudflare kv free-tier daily write cap — surfaces as an opaque 500 without this */
+export function kvQuotaExceededResponse(error: unknown): Response | null {
+	if (!(error instanceof Error)) return null;
+	if (!error.message.includes("KV put() limit exceeded")) return null;
+	return Response.json(
+		{
+			error: "KV_QUOTA_EXCEEDED",
+			message:
+				"Daily Cloudflare KV write limit reached. Production resets at UTC midnight, or use npm run dev locally until then.",
+		},
+		{ status: 503 },
+	);
+}

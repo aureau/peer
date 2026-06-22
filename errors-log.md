@@ -102,3 +102,33 @@ npm run deploy
 **notes**
 - throttling one peer can't expire the other: every paired status poll rolls the 600s ttl (`touchSession`), so one live poller keeps the session alive (verified)
 - background tab stops polling by design (page visibility pause); both peers silent for 10 min is the only thing that expires a paired session
+
+## 2026-06-22 — production can't start a new session (500 on POST /api/pair)
+
+**symptom**
+- `start session` shows "Something went wrong. Please try again"
+- devtools: `POST /api/pair` → 500 (empty body)
+- local `npm run dev` still works
+- not ACCESS_TOKEN — file transfer worked moments earlier on the same deploy
+
+**error (from `wrangler tail`)**
+```
+Error: KV put() limit exceeded for the day.
+```
+
+**cause**
+- cloudflare kv free tier: **1,000 writes/day**
+- paired status poll (`GET /api/{key}/status`) called `touchSession` on **every** poll (every 2s while focused)
+- each touch = 1–2 kv puts (pair record + item index ttl refresh)
+- two devices polling → ~60–120 puts/min → daily cap hit in ~10–15 min of active use
+- starting a new session also needs a kv put (`createPair` → `putPair`), which fails once the cap is exhausted
+
+**fix**
+- throttle poll-driven ttl rolls: only write when `lastActive` is older than 60s (`TOUCH_INTERVAL_SECONDS` in `constants.ts`, logic in `touchSession`)
+- return a clear `503 KV_QUOTA_EXCEEDED` from `/api/pair` instead of an empty 500
+- production quota resets at **utc midnight**; use `npm run dev` locally until then if needed
+- redeploy after the throttle change so future sessions don't burn the cap as fast
+
+**notes**
+- spec `03-tech-stack.md` already said "prefer kv reads over writes during polling" — the pre-throttle code violated that
+- item polls (`GET /api/{key}/items`) were already read-only (`rollTtl: false`); only status poll was the write hog

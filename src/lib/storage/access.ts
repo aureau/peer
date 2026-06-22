@@ -1,7 +1,8 @@
+import { TOUCH_INTERVAL_SECONDS } from "./constants";
 import { SessionError } from "./errors";
 import type { StorageBindings } from "./env";
 import { getItemIndex, refreshItemIndexTtl } from "./items";
-import { getPair, pairTtlForStatus, putPair, touchPair } from "./pair";
+import { getPair, pairTtlForStatus, putPair } from "./pair";
 import { getSessionView } from "./session";
 import type { PairRecord, PeerRole } from "./types";
 
@@ -16,8 +17,17 @@ export async function touchSession(
 	bindings: StorageBindings,
 	sessionKey: string,
 ): Promise<PairRecord | null> {
-	const record = await touchPair(bindings, sessionKey);
+	const record = await getPair(bindings, sessionKey);
 	if (!record) return null;
+
+	const elapsedSeconds =
+		(Date.now() - new Date(record.lastActive).getTime()) / 1000;
+	if (elapsedSeconds < TOUCH_INTERVAL_SECONDS) {
+		return record;
+	}
+
+	record.lastActive = new Date().toISOString();
+	await putPair(bindings, sessionKey, record);
 
 	const ttl = pairTtlForStatus(record.status);
 	await refreshItemIndexTtl(bindings, sessionKey, ttl);
